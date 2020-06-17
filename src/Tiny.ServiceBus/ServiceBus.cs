@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -10,12 +8,14 @@ namespace Tiny.ServiceBus
     public class ServiceBus : IServiceBus
     {
         private readonly ActionBlock<ActionCommand> _actionBlock;
-        protected readonly ConcurrentDictionary<Type, IList<Delegate>> _subscriptions;
         private readonly IMessageHandlerRegistry _registry;
 
         public ServiceBus(IMessageHandlerRegistry registry)
         {
-            var options = new ExecutionDataflowBlockOptions();
+            var options = new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = 10
+            };
             _actionBlock = new ActionBlock<ActionCommand>(ProcessMessage, options);
             _registry = registry;
         }
@@ -23,7 +23,8 @@ namespace Tiny.ServiceBus
         public Task Publish<TMessage>(TMessage message)
         {
             var handlers = _registry.GetHandlerFor(message);
-            return _actionBlock.SendAsync(new ActionCommand(handlers));
+            
+            return Task.WhenAll((IEnumerable<Task>)handlers.Select(x => _actionBlock.SendAsync(new ActionCommand(x))));
         }
 
         public Task Completion()
@@ -33,27 +34,26 @@ namespace Tiny.ServiceBus
 
         private async Task ProcessMessage(ActionCommand command)
         {
-            foreach(var handler in command.Handlers)
-            {
                 try
                 {
-                    await handler.Invoke();
+                    await command.Handler.Invoke();
                 }
                 catch
                 {
                     // exception needs to be caught here otherwise will bubble up and potentially crash the process
-                    // logging exception here might be a good idea
+                    //TODO: logging exception here might be a good idea
+                    //TODO: add a retry mechanism
                 }
-            }
         }
 
         private class ActionCommand
         {
-            public ActionCommand(IEnumerable<IMessageHandler> messageHandlers)
+            public ActionCommand(IMessageHandler messageHandler)
             {
-                Handlers = messageHandlers.ToArray();
+                Handler = messageHandler;
             }
-            public IMessageHandler[] Handlers { get; }
+
+            public IMessageHandler Handler { get; }
         }
     }
 }

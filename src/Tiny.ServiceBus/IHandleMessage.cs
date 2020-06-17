@@ -2,7 +2,7 @@
 
 namespace Tiny.ServiceBus
 {
-    public interface IHandleMessage<TMessage>
+    public interface IHandleMessage<in TMessage>
     {
         Task Handle(TMessage message);
     }

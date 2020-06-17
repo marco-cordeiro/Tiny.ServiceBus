@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Tiny.ServiceBus\Tiny.ServiceBus.csproj" />
+    <ProjectReference Include="..\..\src\Tiny.ServiceBus\Tiny.ServiceBus.csproj" />
   </ItemGroup>
 
 </Project>

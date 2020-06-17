@@ -14,6 +14,7 @@ namespace Tiny.ServiceBus.Example
             builder.AddSingleton<IServiceBus, ServiceBus>();
             builder.AddSingleton<IMessageHandlerRegistry, MessageHandlerRegistry>();
             builder.AddTransient<MyMessageHandler>();
+            builder.AddTransient<SecondMessageHandler>();
 
             var serviceProvider = builder.BuildServiceProvider();
 
@@ -45,7 +46,20 @@ namespace Tiny.ServiceBus.Example
     {
         public Task Handle(MyMessage message)
         {
-            Console.WriteLine($"[{Thread.CurrentThread.ManagedThreadId}] {message.Message}");
+            Console.WriteLine($"My:[{Thread.CurrentThread.ManagedThreadId}] {message.Message}");
+
+            //block the thread
+            Thread.Sleep(1000);
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public class SecondMessageHandler : IHandleMessage<MyMessage>
+    {
+        public Task Handle(MyMessage message)
+        {
+            Console.WriteLine($"Second:[{Thread.CurrentThread.ManagedThreadId}] {message.Message}");
 
             //block the thread
             Thread.Sleep(1000);

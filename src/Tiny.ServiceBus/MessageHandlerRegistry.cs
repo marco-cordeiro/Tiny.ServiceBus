@@ -57,19 +57,11 @@ namespace Tiny.ServiceBus
             }
         }
 
-        private Type[] RegisterSubscriptions(Assembly assembly)
+        private IEnumerable<Type> RegisterSubscriptions(Assembly assembly)
         {
-            var types = assembly.DefinedTypes
+            return assembly.DefinedTypes
                 .Where(type => type.AsType().GetInterfaces()
-                .Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IHandleMessage<>))).ToArray();
-
-            foreach(var messageType in types)
-            {
-                var handlers = messageType.GetInterfaces().Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IHandleMessage<>)).ToArray();
-                    //.Select(x => x.)
-            }
-
-            return types;
+                .Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IHandleMessage<>)));
         }
     }
 }
